@@ -30,9 +30,9 @@ Section deep links such as `#sprint`, `#people` or `#dashboard` still work after
 
 ## Life Happiness Test → PDF by email
 
-When you submit the test, the browser builds a PDF analysis (jsPDF) and downloads it. If a mail endpoint is configured, it also POSTs the PDF to a small Google Apps Script web app, which emails it to you from your own Google account.
+When you submit the test, the browser builds a PDF analysis (jsPDF) and downloads it. If a mail endpoint is configured, it also POSTs the PDF and a summary row to a small Google Apps Script web app, which saves the PDF to a Drive folder, appends the row to a Google Sheet log (index, 10 scores, Odyssey totals, tripwires, PDF link, full answers as JSON), and emails you the PDF.
 
-1. Open script.google.com and create a new project. Paste `tools/apps-script/Code.gs`, then set `RECIPIENT` and `TOKEN` (the token must match the one inside the site source).
+1. Open script.google.com and create a new project. Paste `tools/apps-script/Code.gs`, then set `RECIPIENT`, `TOKEN`, `SHEET_ID` and `FOLDER_ID` (the token must match the one inside the site source).
 2. Deploy → New deployment → Web app → Execute as **Me** → Who has access **Anyone** → copy the `/exec` URL.
 3. Rebuild with the URL: `MAIL_ENDPOINT='https://script.google.com/macros/s/…/exec' SITE_PASSWORD='…' npm run build`
 
