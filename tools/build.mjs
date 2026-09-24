@@ -35,7 +35,9 @@ if (process.argv.includes('--decrypt')) {
 }
 
 const map = fs.readFileSync(path.join(root, 'tools/mapdata.json'), 'utf8');
-const site = fs.readFileSync(path.join(root, 'src/site.template.html'), 'utf8').replace('/*MAPDATA*/null', () => map);
+let site = fs.readFileSync(path.join(root, 'src/site.template.html'), 'utf8').replace('/*MAPDATA*/null', () => map);
+// Optional: Apps Script endpoint for the test's PDF email (kept inside the encrypted page).
+if (process.env.MAIL_ENDPOINT) site = site.replace(/\/\*MAIL_ENDPOINT\*\/("[^"]*"|'')/, () => '/*MAIL_ENDPOINT*/' + JSON.stringify(process.env.MAIL_ENDPOINT));
 const salt = crypto.getRandomValues(new Uint8Array(16));
 const iv = crypto.getRandomValues(new Uint8Array(12));
 const key = await keyFor(salt, ITER);
