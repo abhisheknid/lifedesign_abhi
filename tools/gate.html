@@ -12,20 +12,20 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;--paper:#15130F;--card:#211E18;--ink:#F3EEE4;--ink-3:#9A9283;--line:#342F26;--teal:#4FC0B3;--crit:#f07370}}
 :root[data-theme="dark"]{color-scheme:dark;--paper:#15130F;--card:#211E18;--ink:#F3EEE4;--ink-3:#9A9283;--line:#342F26;--teal:#4FC0B3;--crit:#f07370}
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--paper);color:var(--ink);font:17px/1.5 "Gilroy","Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
-form{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:32px 28px;width:100%;max-width:380px;box-shadow:0 12px 40px -20px rgba(0,0,0,.35)}
-h1{font:800 30px/1.15 "Gilroy","Plus Jakarta Sans",ui-sans-serif,system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 6px}
-h1 span{color:var(--teal)}
-p{margin:0 0 20px;color:var(--ink-3);font-size:16px}
-input[type=password]{width:100%;font:inherit;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink)}
-input[type=password]:focus{outline:2px solid var(--teal);outline-offset:1px}
-label.r{display:flex;gap:8px;align-items:center;font-size:16px;color:var(--ink-3);margin:12px 0 18px}
-button{width:100%;font:600 15px inherit;padding:12px;border:0;border-radius:12px;background:var(--ink);color:var(--paper);cursor:pointer}
-button[disabled]{opacity:.6}
-.err{color:var(--crit);font-size:16px;min-height:21px;margin-top:10px}
+body.gate{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--paper);color:var(--ink);font:17px/1.5 "Gilroy","Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
+.gate form{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:32px 28px;width:100%;max-width:380px;box-shadow:0 12px 40px -20px rgba(0,0,0,.35)}
+.gate h1{font:800 30px/1.15 "Gilroy","Plus Jakarta Sans",ui-sans-serif,system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 6px}
+.gate h1 span{color:var(--teal)}
+.gate p{margin:0 0 20px;color:var(--ink-3);font-size:16px}
+.gate input[type=password]{width:100%;font:inherit;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink)}
+.gate input[type=password]:focus{outline:2px solid var(--teal);outline-offset:1px}
+.gate label.r{display:flex;gap:8px;align-items:center;font-size:16px;color:var(--ink-3);margin:12px 0 18px}
+.gate button{width:100%;font:600 15px inherit;padding:12px;border:0;border-radius:12px;background:var(--ink);color:var(--paper);cursor:pointer}
+.gate button[disabled]{opacity:.6}
+.gate .err{color:var(--crit);font-size:16px;min-height:21px;margin-top:10px}
 </style>
 </head>
-<body>
+<body class="gate">
 <form id="f" autocomplete="on">
   <h1>Life Design <span>for Abhi</span></h1>
   <p>This page is private. Enter the password to unlock it.</p>
@@ -45,7 +45,22 @@ const PAYLOAD = /*PAYLOAD*/null;
     const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64(PAYLOAD.iv)}, key, b64(PAYLOAD.ct));
     return new TextDecoder().decode(pt);
   }
-  function show(html){ document.open(); document.write(html); document.close(); }
+  // Swap in the unlocked page by replacing <head> and <body> (document.open/write is unreliable in Chrome
+  // when it runs before the gate finishes parsing), then run its scripts in order.
+  function show(html){
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const root = document.documentElement;
+    [...root.attributes].forEach(a => root.removeAttribute(a.name));
+    [...doc.documentElement.attributes].forEach(a => root.setAttribute(a.name, a.value));
+    document.head.replaceWith(document.importNode(doc.head, true));
+    document.body.replaceWith(document.importNode(doc.body, true));
+    document.querySelectorAll('script').forEach(old => {
+      const s = document.createElement('script');
+      [...old.attributes].forEach(a => s.setAttribute(a.name, a.value));
+      s.textContent = old.textContent;
+      old.replaceWith(s);
+    });
+  }
   async function fromStored(){
     let raw = null;
     try { raw = localStorage.getItem(KEY) || sessionStorage.getItem(KEY); } catch(e) {}
